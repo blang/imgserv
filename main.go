@@ -12,6 +12,10 @@ import (
 func upload(filename string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
+			if paused {
+				http.Error(w, "", http.StatusServiceUnavailable)
+				return
+			}
 			r.ParseMultipartForm(32 << 20)
 			file, _, err := r.FormFile("file")
 			if err != nil {
@@ -82,11 +86,24 @@ var (
 	filepath    = flag.String("path", "/tmp/img.jpg", "Filepath to image")
 )
 
+var paused = false
+
+func pause(w http.ResponseWriter, r *http.Request) {
+	if paused {
+		paused = false
+		fmt.Fprintln(w, "Unpaused")
+	} else {
+		paused = true
+		fmt.Fprintln(w, "Paused")
+	}
+}
+
 func main() {
 	flag.Parse()
 	http.Handle("/", auth(*username, *password, http.HandlerFunc(index)))
 	http.Handle("/img.jpg", auth(*username, *password, img(*filepath)))
 	http.Handle("/upload", upauth(*uploadtoken, upload(*filepath)))
+	http.Handle("/pause", auth(*username, *password, http.HandlerFunc(pause)))
 	log.Fatal(http.ListenAndServe(*listen, nil))
 	// upload logic
 }
