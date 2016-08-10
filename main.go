@@ -31,7 +31,12 @@ func upload(filename string) http.Handler {
 				return
 			}
 			defer f.Close()
-			io.Copy(f, file)
+			_, err = io.Copy(f, file)
+			if err != nil {
+				log.Printf("Error uploading: %s", err)
+				http.Error(w, "Error", 500)
+				return
+			}
 			fmt.Fprintln(w, "Success!")
 		} else {
 			http.Error(w, "Not found", 404)
@@ -105,5 +110,4 @@ func main() {
 	http.Handle("/upload", upauth(*uploadtoken, upload(*filepath)))
 	http.Handle("/pause", auth(*username, *password, http.HandlerFunc(pause)))
 	log.Fatal(http.ListenAndServe(*listen, nil))
-	// upload logic
 }
