@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	path "path/filepath"
+	"sort"
 	"sync"
 	"time"
 )
@@ -116,7 +117,9 @@ func last(w http.ResponseWriter, r *http.Request) {
 func index(filepath string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "<html><body><h1>Bilder</h1>\n")
-		for _, v := range fileBuffer.Slice() {
+		slice := fileBuffer.Slice()
+		sort.Sort(sort.Reverse(sort.StringSlice(slice)))
+		for _, v := range slice {
 			fmt.Fprintf(w, `<a href="%s">%s</a><br />`+"\n", path.Join("/imgs", v), v)
 		}
 		fmt.Fprintf(w, "</body></html>\n")
